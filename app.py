@@ -7,7 +7,7 @@ import io
 import sys
 from scoreCalculation import load_bracket, madness_sim
 
-st.title("🏀 March Madness Simulator")
+st.title("🏀 March Madness Simulator -- v1.1")
 
 df = pd.read_csv('ratings.csv')
 
