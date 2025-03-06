@@ -80,7 +80,7 @@ def simulate_game (team_name1, team_name2, df):
     team1_score += rating_boosts(team1_row,team2_row)
     team2_score += rating_boosts(team2_row,team1_row)
     
-    rating_diff = (team1_score - team2_score) * 8  # Scale factor to adjust win probability distribution
+    rating_diff = (team1_score - team2_score) * 7.5  # Scale factor to adjust win probability distribution
     win_prob_team1 = 1 / (1 + np.exp(-rating_diff))  
 
     # Simulate game outcome
