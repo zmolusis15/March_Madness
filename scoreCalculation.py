@@ -69,27 +69,31 @@ def rating_boosts (row, opponent):
 
 
 
+#Sim Games
 def simulate_game (team_name1, team_name2, df):
-    np.random.seed(None)  
     team1_row = df[df["team"] == team_name1].iloc[0]
     team2_row = df[df['team'] == team_name2].iloc[0]
 
     team1_score = calculate_team_rating(team1_row)
     team2_score = calculate_team_rating(team2_row)
-
+    
     team1_score += rating_boosts(team1_row,team2_row)
-    team2_score += rating_boosts(team1_row,team2_row)
-
-    rating_diff = (team1_score - team2_score) * 7  # Scale factor to adjust win probability distribution
+    team2_score += rating_boosts(team2_row,team1_row)
+    
+    rating_diff = (team1_score - team2_score) * 8  # Scale factor to adjust win probability distribution
     win_prob_team1 = 1 / (1 + np.exp(-rating_diff))  
 
     # Simulate game outcome
     random_number = np.random.rand()
+    
     if random_number < win_prob_team1:
         winner = team_name1
+        winning_prob = win_prob_team1
     else: 
         winner = team_name2
-    return winner
+        winning_prob = 1-win_prob_team1
+        
+    return winner, winning_prob
 
 
 def load_bracket():
@@ -138,51 +142,63 @@ def load_bracket():
     return bracket
 
 
-def print_bracket(bracket, old_bracket):
-    
+def print_bracket(bracket, old_bracket, game_prob):
     for region in old_bracket.keys():
-        print(f"🌎 {region} Region:")
-        
+        print(f"🌎 {region} Region:\n")
+
         # Extract winners from the current bracket
-        current_winners = {team[1] for team in bracket[region]} 
-        
-        for matchup in old_bracket[region]:  # Loop through the previous round's matchups
-            seed, team = matchup
+        current_winners = {team[1] for team in bracket[region]}  # Store only the team names in a set
+
+        for idx, matchup in enumerate(old_bracket[region]):# Loop through the previous round's matchups
             
+            spacing = (idx % 2 != 0) and (idx < len(old_bracket[region]) - 1)
+            
+            seed, team = matchup
+
             if team in current_winners:  
-                print(f"{seed} {team} ✅")
+                winning_prob = game_prob[team]
+                print(f"{seed} {team} ✅ --- {winning_prob}%")
             else: 
                 print(f"{seed} {team} ❌")
+
+            if spacing:
+                print("\n")
         
-        print("\n" + "-"*30)
+        print("-"*30)
 
 
-def print_final_four(teams, winners):
+def print_final_four(teams, winners, game_prob):
     print("\n🏆 Final Four 🏆\n")
     if teams[0][0][1] == winners[0][1]:
-        print(teams[0][0][0], teams[0][0][1], "✅")
-        print(teams[1][0][0], teams[1][0][1], "❌")
+        winning_prob = game_prob[teams[0][0][1]]
+        print(f"{teams[0][0][0]} {teams[0][0][1]} ✅ ---{winning_prob}%")
+        print(f"{teams[1][0][0]} {teams[1][0][1]} ❌")
     else:
-        print(teams[0][0][0], teams[0][0][1], "❌")
-        print(teams[1][0][0], teams[1][0][1], "✅")
+        winning_prob = game_prob[teams[1][0][1]]
+        print(f"{teams[0][0][0]} {teams[0][0][1]} ❌")
+        print(f"{teams[1][0][0]} {teams[1][0][1]} ✅ ---{winning_prob}%")
     print('\n')
     if teams[2][0][1] == winners[1][1]:
-        print(teams[2][0][0], teams[2][0][1], "✅")
-        print(teams[3][0][0], teams[3][0][1], "❌")
+        winning_prob = game_prob[teams[2][0][1]]
+        print(f"{teams[2][0][0]} {teams[2][0][1]} ✅ ---{winning_prob}%")
+        print(f"{teams[3][0][0]} {teams[3][0][1]} ❌")
     else:
-        print(teams[2][0][0], teams[2][0][1], "❌")
-        print(teams[3][0][0], teams[3][0][1], "✅")
+        winning_prob = game_prob[teams[3][0][1]]
+        print(f"{teams[2][0][0]} {teams[2][0][1]} ❌")
+        print(f"{teams[3][0][0]} {teams[3][0][1]} ✅ ---{winning_prob}%")
     print("\n" + "-"*30)
 
 
-def print_chip(teams, champ):
+def print_chip(teams, champ, game_prob):
     print("\n🏆 National Championship 🏆\n")
     if teams[0][1] == champ:
-        print(teams[0][0],teams[0][1], "✅")
-        print(teams[1][0],teams[1][1], "❌")
+        winning_prob = game_prob[teams[0][1]]
+        print(f"{teams[0][0]} {teams[0][1]} ✅ --- {winning_prob}%")
+        print(f"{teams[1][0]} {teams[1][1]} ❌")
     else:
-        print(teams[0][0],teams[0][1], "❌")
-        print(teams[1][0],teams[1][1], "✅")
+        winning_prob = game_prob[teams[1][1]]
+        print(f"{teams[0][0]} {teams[0][1]} ❌")
+        print(f"{teams[1][0]} {teams[1][1]} ✅ --- {winning_prob}%")
     print("\n" + "-"*30)
     print("\n🏀🏆 Champion 🏆🏀\n")
     print(champ)
@@ -195,6 +211,7 @@ def madness_sim(bracket, df):
     round_names = ["First Round", "Round of 32", "Sweet 16", "Elite 8"]
     round_winners_list = []
     for round_index, round_name in enumerate(round_names):
+        game_prob = {}
         print(f"\n🏀 {round_name} 🏀\n")
         old_bracket = copy.deepcopy(bracket)
         for region in regions:
@@ -204,34 +221,40 @@ def madness_sim(bracket, df):
             for i in range(0, step, 2):
                 team1 = bracket[region][i][1]
                 team2 = bracket[region][i+1][1]
-                winner = simulate_game(team1, team2, df)  
+                winner, winning_prob = simulate_game(team1, team2, df)
+
+                game_prob[winner] = round(winning_prob*100) #game probability dictionary - team:prob
                 if team1 == winner:
                     winners_list.append(bracket[region][i])
                 else:
                     winners_list.append(bracket[region][i+1])
-                
             
-            bracket[region] = winners_list.copy() #UPDATING BRACKET
+            bracket[region] = winners_list  # Update the bracket
             round_winners_list.append(winners_list)
-        print_bracket(bracket, old_bracket)
-            
+        print_bracket(bracket, old_bracket, game_prob)
+
+    game_prob = {}
     final_four = []
     for region in regions:
         final_four.append(bracket[region])
+        
     #Final Four
     winners_list = []
     for i in range(0,4,2):
         team1 = final_four[i][0][1]
         team2 = final_four[i+1][0][1]
-        winner = simulate_game(team1, team2, df)
-     
+        winner, winning_prob = simulate_game(team1,team2, df)
+        game_prob[winner] = round(winning_prob*100) #game probability dictionary - team:prob
         if team1 == winner:
             winners_list.append(final_four[i][0])
         else:
             winners_list.append(final_four[i+1][0])
-    print_final_four(final_four, winners_list)
+    print_final_four(final_four, winners_list, game_prob)
 
     #Championship
-    champion = simulate_game(winners_list[0][1], winners_list[1][1], df)
-    print_chip(winners_list, champion)
+    game_prob = {}
+    champion, winning_prob = simulate_game(winners_list[0][1], winners_list[1][1], df)
+    game_prob[champion] = round(winning_prob*100) #game probability dictionary - team:prob
+    print_chip(winners_list, champion, game_prob)
+
     return bracket
