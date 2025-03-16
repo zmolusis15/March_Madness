@@ -61,7 +61,7 @@ def rating_boosts (row, opponent):
     boost_rating = 0
 
     #Momentum Boost
-    momentum_boost_set = {"North Carolina"}
+    momentum_boost_set = {""}
     if row['team'] in momentum_boost_set:
         boost_rating += 0.1
         
