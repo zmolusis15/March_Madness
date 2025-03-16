@@ -71,6 +71,7 @@ def rating_boosts (row, opponent):
 
 #Sim Games
 def simulate_game (team_name1, team_name2, df):
+    
     team1_row = df[df["team"] == team_name1].iloc[0]
     team2_row = df[df['team'] == team_name2].iloc[0]
 
@@ -81,6 +82,7 @@ def simulate_game (team_name1, team_name2, df):
     team2_score += rating_boosts(team2_row,team1_row)
     
     rating_diff = (team1_score - team2_score) * 7.5  # Scale factor to adjust win probability distribution
+
     win_prob_team1 = 1 / (1 + np.exp(-rating_diff))  
 
     # Simulate game outcome
@@ -94,49 +96,50 @@ def simulate_game (team_name1, team_name2, df):
         winning_prob = 1-win_prob_team1
         
     return winner, winning_prob
+    
 
 
 def load_bracket():
     bracket = {
-        "East": [
-            (1, "Duke") , (16, "Marist"),
-            (8, "New Mexico"), (9, "Connecticut"),
-            (5, "Missouri"), (12, "Yale"),
-            (4, "Purdue"), (13, "Lipscomb"),
-            (6, "UCLA"), (11, "UC San Diego"),
-            (3, "Texas Tech"), (14, "Towson"),
-            (7, "Memphis"), (10, "Arkansas"),
-            (2, "Tennessee"), (15, "Norfolk St.")
+        "South": [
+            (1, "Auburn"), (16, "Alabama St."),
+            (8, "Louisville"), (9, "Creighton"),
+            (5, "Michigan"), (12, "UC San Diego"),
+            (4, "Texas A&M"), (13, "Yale"),
+            (6, "Mississippi"), (11, "North Carolina"),
+            (3, "Iowa St."), (14, "Lipscomb"),
+            (7, "Marquette"), (10, "New Mexico"),
+            (2, "Michigan St."), (15, "Bryant")
         ],
         "West": [
-            (1, "Houston"), (16, "Nebraska Omaha"),
-            (8, "BYU"), (9, "Utah St."),
-            (5, "Oregon"), (12, "Drake"),
-            (4, "St. John's"), (13, "Liberty"),
-            (6, "Saint Mary's"), (11, "Indiana"),
-            (3, "Wisconsin"), (14, "Chattanooga"),
-            (7, "Louisville"), (10, "West Virginia"),
-            (2, "Florida"), (15, "Central Connecticut")
+            (1, "Florida"), (16, "Norfolk St."),
+            (8, "Connecticut"), (9, "Oklahoma"),
+            (5, "Memphis"), (12, "Colorado St."),
+            (4, "Maryland"), (13, "Grand Canyon"),
+            (6, "Missouri"), (11, "Drake"),
+            (3, "Texas Tech"), (14, "UNC Wilmington"),
+            (7, "Kansas"), (10, "Arkansas"),
+            (2, "St. John's"), (15, "Nebraska Omaha")
         ],
-        "South": [
-            (1, "Auburn"), (16, "American"),
-            (8, "Illinois"), (9, "Vanderbilt"),
-            (5, "Clemson"), (12, "Ohio St."),
-            (4, "Michigan"), (13, "High Point"),
-            (6, "Marquette"), (11, "VCU"),
-            (3, "Kentucky"), (14, "James Madison"),
-            (7, "Mississippi St."), (10, "San Diego St."),
-            (2, "Iowa St."), (15, "Montana")
+        "East": [
+            (1, "Duke") , (16, "American"),
+            (8, "Mississippi St."), (9, "Baylor"),
+            (5, "Oregon"), (12, "Liberty"),
+            (4, "Arizona"), (13, "Akron"),
+            (6, "BYU"), (11, "VCU"),
+            (3, "Wisconsin"), (14, "Montana"),
+            (7, "Saint Mary's"), (10, "Vanderbilt"),
+            (2, "Alabama"), (15, "Robert Morris")
         ],
         "Midwest": [
-            (1, "Alabama"), (16, "Bryant"),
-            (8, "Creighton"), (9, "Gonzaga"),
-            (5, "Maryland"), (12, "McNeese"),
-            (4, "Arizona"), (13, "Akron"),
-            (6, "Kansas"), (11, "Nebraska"),
-            (3, "Texas A&M"), (14, "Utah Valley"),
-            (7, "Mississippi"), (10, "Baylor"),
-            (2, "Michigan St."), (15, "Robert Morris")
+            (1, "Houston"), (16, "SIUE"),
+            (8, "Gonzaga"), (9, "Georgia"),
+            (5, "Clemson"), (12, "McNeese"),
+            (4, "Purdue"), (13, "High Point"),
+            (6, "Illinois"), (11, "Texas"),
+            (3, "Kentucky"), (14, "Troy"),
+            (7, "UCLA"), (10, "Utah St."),
+            (2, "Tennessee"), (15, "Wofford")
         ]
     }
     return bracket
@@ -206,7 +209,7 @@ def print_chip(teams, champ, game_prob):
 
 def madness_sim(bracket, df):
     print("🏀 NCAA March Madness Bracket 🏀\n")
-    regions = ['East', 'West', 'South', 'Midwest']
+    regions = ['West','East' , 'Midwest', 'South']
     
     round_names = ["First Round", "Round of 32", "Sweet 16", "Elite 8"]
     round_winners_list = []
