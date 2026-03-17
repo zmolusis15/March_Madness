@@ -9,7 +9,7 @@ from scoreCalculation import load_bracket, madness_sim
 
 st.title("🏀 March Madness Simulator -- v1.3")
 
-df = pd.read_csv('data/ratings.csv')
+df = pd.read_csv('ratings.csv')
 
 if st.button("Run Simulation"):
     bracket = load_bracket()
