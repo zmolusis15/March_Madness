@@ -215,7 +215,7 @@ def print_chip(teams, champ, game_prob):
 
 def madness_sim(bracket, df):
     print("🏀 NCAA March Madness Bracket 🏀\n")
-    regions = ['South','West','East' , 'Midwest']
+    regions = ['East','South','West' , 'Midwest']
     
     round_names = ["First Round", "Round of 32", "Sweet 16", "Elite 8"]
     round_winners_list = []
