@@ -2,40 +2,45 @@ import pandas as pd
 import copy
 import numpy as np
 
-df = pd.read_csv("ratings.csv")
-
 def calculate_team_rating(row):
-    # Calculate Adjusted Efficiency Margin (normalized)
+    # Core metric: Adjusted Efficiency Margin
     adj_em = row["off_eff_adj"] - row["def_eff_adj"]
 
-    # Weights for each stat
+    # Rebalanced weights (more top-heavy, less noise)
     weights = {
-        "AdjEM": 0.40,   # Overall efficiency
-        "SOS": 0.15,     # Strength of Schedule
-        "tempo_adj": 0.05,  # Tempo/Pace
-        "Off-eFG%": 0.07,  # Offensive Shooting Efficiency
-        "Def-eFG%": 0.07,  # Defensive Shooting Efficiency
-        "Off-TO%": -0.05,  # Turnovers (negative impact)
-        "Def-TO%": 0.05,   # Defensive Turnovers Forced
-        "Off-OR%": 0.05,   # Offensive Rebounding
-        "Def-OR%": -0.05,  # Opponent Offensive Rebounding (lower is better)
-        "Off-FTRate": 0.03,  # Getting to the FT line
-        "Def-FTRate": -0.03,  # Opponent getting to the FT line (lower is better)
-        "Experience": 0.10,  # Veteran teams perform better
-        "Continuity": 0.05,  # Returning players help chemistry
-        "Bench": 0.03,  # Bench depth
-        "3P%": 0.05,   # 3-point shooting
-        "FT%": 0.03,   # Free throw shooting
-        "3PA%": 0.03,  # Volume of 3-pointers taken
-        "EffHgt": 0.03,  # Effective height
-        "C-Hgt": 0.00  # Center height
+        "AdjEM": 0.60,        # MUCH more important (was 0.40)
+        "SOS": 0.18,          # Strong signal for team quality
+
+        # Core performance stats (still important, but secondary)
+        "Off-eFG%": 0.06,
+        "Def-eFG%": -0.06,
+        "Off-TO%": -0.04,
+        "Def-TO%": 0.04,
+        "Off-OR%": 0.04,
+        "Def-OR%": -0.04,
+
+        # Situational / minor contributors
+        "Off-FTRate": 0.02,
+        "Def-FTRate": -0.02,
+        "3P%": 0.02,
+        "FT%": 0.01,
+
+        # Team structure (keep small so they don’t dominate)
+        "Experience": 0.03,
+        "Continuity": 0.02,
+        "Bench": 0.01,
+
+        # Very low impact (basically tiebreakers)
+        "tempo_adj": 0.01,
+        "3PA%": 0.01,
+        "EffHgt": 0.01,
+        "C-Hgt": 0.00
     }
 
-    # Compute team rating as a weighted sum
+    # Compute rating
     rating = (
         weights["AdjEM"] * adj_em +
         weights["SOS"] * row["SOS"] +
-        weights["tempo_adj"] * row["tempo_adj"] +
         weights["Off-eFG%"] * row["Off-eFG%"] +
         weights["Def-eFG%"] * row["Def-eFG%"] +
         weights["Off-TO%"] * row["Off-TO%"] +
@@ -44,11 +49,12 @@ def calculate_team_rating(row):
         weights["Def-OR%"] * row["Def-OR%"] +
         weights["Off-FTRate"] * row["Off-FTRate"] +
         weights["Def-FTRate"] * row["Def-FTRate"] +
+        weights["3P%"] * row["3P%"] +
+        weights["FT%"] * row["FT%"] +
         weights["Experience"] * row["Experience"] +
         weights["Continuity"] * row["Continuity"] +
         weights["Bench"] * row["Bench"] +
-        weights["3P%"] * row["3P%"] +
-        weights["FT%"] * row["FT%"] +
+        weights["tempo_adj"] * row["tempo_adj"] +
         weights["3PA%"] * row["3PA%"] +
         weights["EffHgt"] * row["EffHgt"] +
         weights["C-Hgt"] * row["C-Hgt"]
@@ -101,45 +107,45 @@ def simulate_game (team_name1, team_name2, df):
 
 def load_bracket():
     bracket = {
+        "East": [
+            (1, "Duke"), (16, "Siena"),
+            (8, "Ohio St."), (9, "TCU"),
+            (5, "St. John's"), (12, "Northern Iowa"),
+            (4, "Kansas"), (13, "Cal Baptist"),
+            (6, "Louisville"), (11, "South Florida"),
+            (3, "Michigan St."), (14, "North Dakota St."),
+            (7, "UCLA"), (10, "UCF"),
+            (2, "Connecticut"), (15, "Furman")
+        ],
         "South": [
-            (1, "Auburn"), (16, "Alabama St."),
-            (8, "Louisville"), (9, "Creighton"),
-            (5, "Michigan"), (12, "UC San Diego"),
-            (4, "Texas A&M"), (13, "Yale"),
-            (6, "Mississippi"), (11, "North Carolina"),
-            (3, "Iowa St."), (14, "Lipscomb"),
-            (7, "Marquette"), (10, "New Mexico"),
-            (2, "Michigan St."), (15, "Bryant")
+            (1, "Florida"), (16, "Lehigh"),
+            (8, "Clemson"), (9, "Iowa"),
+            (5, "Vanderbilt"), (12, "McNeese"),
+            (4, "Nebraska"), (13, "Troy"),
+            (6, "North Carolina"), (11, "VCU"),
+            (3, "Illinois"), (14, "Penn"),
+            (7, "Saint Mary's"), (10, "Texas A&M"),
+            (2, "Houston"), (15, "Idaho")
         ],
         "West": [
-            (1, "Florida"), (16, "Norfolk St."),
-            (8, "Connecticut"), (9, "Oklahoma"),
-            (5, "Memphis"), (12, "Colorado St."),
-            (4, "Maryland"), (13, "Grand Canyon"),
-            (6, "Missouri"), (11, "Drake"),
-            (3, "Texas Tech"), (14, "UNC Wilmington"),
-            (7, "Kansas"), (10, "Arkansas"),
-            (2, "St. John's"), (15, "Nebraska Omaha")
-        ],
-        "East": [
-            (1, "Duke") , (16, "American"),
-            (8, "Mississippi St."), (9, "Baylor"),
-            (5, "Oregon"), (12, "Liberty"),
-            (4, "Arizona"), (13, "Akron"),
-            (6, "BYU"), (11, "VCU"),
-            (3, "Wisconsin"), (14, "Montana"),
-            (7, "Saint Mary's"), (10, "Vanderbilt"),
-            (2, "Alabama"), (15, "Robert Morris")
+            (1, "Arizona"), (16, "LIU"),
+            (8, "Villanova"), (9, "Utah St."),
+            (5, "Wisconsin"), (12, "High Point"),
+            (4, "Arkansas"), (13, "Hawaii"),
+            (6, "BYU"), (11, "N.C. State"),
+            (3, "Gonzaga"), (14, "Kennesaw St."),
+            (7, "Miami FL"), (10, "Missouri"),
+            (2, "Purdue"), (15, "Queens")
         ],
         "Midwest": [
-            (1, "Houston"), (16, "SIUE"),
-            (8, "Gonzaga"), (9, "Georgia"),
-            (5, "Clemson"), (12, "McNeese"),
-            (4, "Purdue"), (13, "High Point"),
-            (6, "Illinois"), (11, "Texas"),
-            (3, "Kentucky"), (14, "Troy"),
-            (7, "UCLA"), (10, "Utah St."),
-            (2, "Tennessee"), (15, "Wofford")
+            (1, "Michigan"), (16, "UMBC"),
+            (8, "Georgia"), (9, "Saint Louis"),
+            (5, "Texas Tech"), (12, "Akron"),
+            (4, "Alabama"), (13, "Hofstra"),
+            (6, "Tennessee"), (11, "SMU"),
+            (3, "Virginia"), (14, "Wright St."),
+            (7, "Kentucky"), (10, "Santa Clara"),
+            (2, "Iowa St."), (15, "Tennessee St.")
         ]
     }
     return bracket
